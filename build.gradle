@@ -1,0 +1,44 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.3.4'
+    id 'io.spring.dependency-management' version '1.1.6'
+}
+
+group = 'com.polarbookshop'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    //리액티브 애플리케이션에서 Spring Data를 사용해 R2DBC로 관계형 데이터베이스에 데이터를 저장하기 위해 필요한 라이브러리를 제공
+    implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+    //자바 빈 유효성 검사 API를 사용해 객체의 유효성 검사
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    //Spring WebFlux를 통해 리액티브 웹 애플리케이션을 구축하기 위한 라이브러리를 제공하며 Netty를 기본 임베디드 서버로 포함
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    runtimeOnly 'org.postgresql:postgresql'
+    //애플리케이션이 PostgreSQL DB에 리액티브 방식으로 연결할 수 있게 해주는 R2DBC 드라이버를 제공
+    runtimeOnly 'org.postgresql:r2dbc-postgresql'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    //프로젝트 리액터를 기반으로 작성된 리액티브 애플리케이션을 테스트하기 위한 유틸리티 제공
+    testImplementation 'io.projectreactor:reactor-test'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:r2dbc'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
