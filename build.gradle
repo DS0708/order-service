@@ -25,9 +25,13 @@ dependencies {
     //Spring WebFlux를 통해 리액티브 웹 애플리케이션을 구축하기 위한 라이브러리를 제공하며 Netty를 기본 임베디드 서버로 포함
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
-    runtimeOnly 'org.postgresql:postgresql'
     //애플리케이션이 PostgreSQL DB에 리액티브 방식으로 연결할 수 있게 해주는 R2DBC 드라이버를 제공
     runtimeOnly 'org.postgresql:r2dbc-postgresql'
+    // 리액티브 프로젝트에서 flyway를 사용하기 위한 의존성 추가(flyway는 아직 R2DBC를 제공하지 않아 JDBC 드라이버를 사용해야함)
+    //implementation 'org.flywaydb:flyway-core' -> version conflict나서 공식문서 참고
+    implementation "org.flywaydb:flyway-database-postgresql"
+    runtimeOnly 'org.postgresql:postgresql' //애플리케이션이 PostgreSQL 데이터베이스에 연결할 수 있게 해주는 JDBC 드라이버
+    runtimeOnly 'org.springframework:spring-jdbc' //JDBC API와 스프링의 통합을 제공, 스프링 프레임워크의 일부이며 Spring Data JDBC와 혼동하면 안됨
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'

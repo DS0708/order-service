@@ -1,0 +1,24 @@
+server:
+  port: 9002
+  shutdown: graceful
+  netty:
+    connection-timeout: 2s # 서버와 TCP 연결을 위해 기다리는 시간
+    idle-timeout: 15s # 데이터가 전송되지 않는 경우 TCP 연결을 닫기 전에 기다리는 시간
+
+spring:
+  application:
+    name: order-service
+  lifecycle:
+    timeout-per-shutdown-phase: 15s # graceful shutdown 시간을 15초로 설정
+  r2dbc:
+    username: user
+    password: password
+    url: r2dbc:postgresql://localhost:5432/polardb_order
+    pool:
+      max-create-connection-time: 2s # Pool에서 Connection Object 하나 얻을 때까지 기다릴 수 있는 최대한의 시간
+      initial-size: 5 # Connection Pool의 초기 크기
+      max-size: 10 # Pool이 최대한으로 가질 수 있는 Connection 수
+  flyway:
+    user: ${spring.r2dbc.username}
+    password: ${spring.r2dbc.password}
+    url: jdbc:postgresql://localhost:5432/polardb_order
