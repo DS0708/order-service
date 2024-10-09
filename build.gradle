@@ -13,8 +13,30 @@ java {
     }
 }
 
+//프로젝트를 빌드할 때 그래들이 설정 프로세서를 사용하도록 설정
+configurations {
+    compileOnly{
+        //런타임 의존성에서 제외하여 빌드 결과물의 크기를 줄임, annotationProcessor는 컴파일 시에만 필요하므로
+        extendsFrom annotationProcessor
+    }
+}
+
 repositories {
     mavenCentral()
+}
+
+ext{
+    //spring cloud config client
+    set('springCloudVersion', "2023.0.3")
+    //사용할 테스트컨테이너 버전 지정
+    set('testcontainersVersion', "1.17.3")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.testcontainers:testcontainers-bom:${testcontainersVersion}"
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
 }
 
 dependencies {
@@ -25,9 +47,16 @@ dependencies {
     //Spring WebFlux를 통해 리액티브 웹 애플리케이션을 구축하기 위한 라이브러리를 제공하며 Netty를 기본 임베디드 서버로 포함
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
-    runtimeOnly 'org.postgresql:postgresql'
     //애플리케이션이 PostgreSQL DB에 리액티브 방식으로 연결할 수 있게 해주는 R2DBC 드라이버를 제공
     runtimeOnly 'org.postgresql:r2dbc-postgresql'
+    // 리액티브 프로젝트에서 flyway를 사용하기 위한 의존성 추가(flyway는 아직 R2DBC를 제공하지 않아 JDBC 드라이버를 사용해야함)
+    //implementation 'org.flywaydb:flyway-core' -> version conflict나서 공식문서 참고
+    implementation "org.flywaydb:flyway-database-postgresql"
+    runtimeOnly 'org.postgresql:postgresql' //애플리케이션이 PostgreSQL 데이터베이스에 연결할 수 있게 해주는 JDBC 드라이버
+    runtimeOnly 'org.springframework:spring-jdbc' //JDBC API와 스프링의 통합을 제공, 스프링 프레임워크의 일부이며 Spring Data JDBC와 혼동하면 안됨
+
+    //프로젝트를 빌드할 때 새로운 속성에 대한 메타데이터가 자동으로 생성되고 META-INF/spring-configuration-metadata.json에 저장하여 IDE가 자동완성과 같은 기능을 지원하도록 함
+    implementation 'org.springframework.boot:spring-boot-configuration-processor'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
@@ -37,6 +66,27 @@ dependencies {
     testImplementation 'org.testcontainers:postgresql'
     testImplementation 'org.testcontainers:r2dbc'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    //모의 웹 서버를 실행하는 유틸리티를 위한 의존성, OkHttp 프로젝트는 HTTP 기반 요청/응답 상호작용 테스트에서 사용할 수 있는 모의 웹 서버를 제공
+    testImplementation 'com.squareup.okhttp3:mockwebserver'
+
+    //spring cloud config client
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    //스프링 클라이언트가 서버와의 연결이 실패할때 retry하기 위한 Spring Retry 의존성 추가
+    implementation 'org.springframework.retry:spring-retry'
+}
+
+bootBuildImage {
+    builder = "docker.io/paketobuildpacks/builder-jammy-base"
+    imageName = "${project.name}"
+    environment = ["BP_JVM_VERSION": "17"]
+
+    docker {
+        publishRegistry {
+            username = project.findProperty("registryUsername")
+            password = project.findProperty("registryToken")
+            url = project.findProperty("registryUrl")
+        }
+    }
 }
 
 tasks.named('test') {
