@@ -25,6 +25,20 @@ repositories {
     mavenCentral()
 }
 
+ext{
+    //spring cloud config client
+    set('springCloudVersion', "2023.0.3")
+    //사용할 테스트컨테이너 버전 지정
+    set('testcontainersVersion', "1.17.3")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.testcontainers:testcontainers-bom:${testcontainersVersion}"
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
 dependencies {
     //리액티브 애플리케이션에서 Spring Data를 사용해 R2DBC로 관계형 데이터베이스에 데이터를 저장하기 위해 필요한 라이브러리를 제공
     implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
@@ -54,6 +68,25 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     //모의 웹 서버를 실행하는 유틸리티를 위한 의존성, OkHttp 프로젝트는 HTTP 기반 요청/응답 상호작용 테스트에서 사용할 수 있는 모의 웹 서버를 제공
     testImplementation 'com.squareup.okhttp3:mockwebserver'
+
+    //spring cloud config client
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    //스프링 클라이언트가 서버와의 연결이 실패할때 retry하기 위한 Spring Retry 의존성 추가
+    implementation 'org.springframework.retry:spring-retry'
+}
+
+bootBuildImage {
+    builder = "docker.io/paketobuildpacks/builder-jammy-base"
+    imageName = "${project.name}"
+    environment = ["BP_JVM_VERSION": "17"]
+
+    docker {
+        publishRegistry {
+            username = project.findProperty("registryUsername")
+            password = project.findProperty("registryToken")
+            url = project.findProperty("registryUrl")
+        }
+    }
 }
 
 tasks.named('test') {

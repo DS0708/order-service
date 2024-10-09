@@ -22,6 +22,19 @@ spring:
     user: ${spring.r2dbc.username}
     password: ${spring.r2dbc.password}
     url: jdbc:postgresql://localhost:5432/polardb_order
+  config:
+    import: "optional:configserver:" # 외부 config server가 열려있으면 가져오고 없으면, 이것 사용
+  cloud:
+    config:
+      uri: http://localhost:8888 # Config Server's URL
+      request-connect-timeout: 5000 # Config Server로의 연결 시도 시간 제한(ms)
+      request-read-timeout: 5000 # Config Server로부터 응답을 기다리는 시간 제한(ms)
+      fail-fast: false # 초기 시작 시 구성 서버 연결 실패 시 애플리케이션이 실패하도록 설정(true일 경우). 개발 환경에서는 false로 설정.
+      retry:
+        max-attempts: 6 # 재시도 할 최대 횟수
+        initial-interval: 1000 # 첫 재시도 간격(ms)
+        max-interval: 2000 # 재시도 간격의 최대 값(ms)
+        multiplier: 1.1 # 재시도 간격 증가 배율
 
 polar:
   catalog-service-uri: "http://localhost:9001"
