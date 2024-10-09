@@ -52,6 +52,8 @@ dependencies {
     testImplementation 'org.testcontainers:postgresql'
     testImplementation 'org.testcontainers:r2dbc'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    //모의 웹 서버를 실행하는 유틸리티를 위한 의존성, OkHttp 프로젝트는 HTTP 기반 요청/응답 상호작용 테스트에서 사용할 수 있는 모의 웹 서버를 제공
+    testImplementation 'com.squareup.okhttp3:mockwebserver'
 }
 
 tasks.named('test') {
