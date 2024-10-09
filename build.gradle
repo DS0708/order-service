@@ -13,6 +13,14 @@ java {
     }
 }
 
+//프로젝트를 빌드할 때 그래들이 설정 프로세서를 사용하도록 설정
+configurations {
+    compileOnly{
+        //런타임 의존성에서 제외하여 빌드 결과물의 크기를 줄임, annotationProcessor는 컴파일 시에만 필요하므로
+        extendsFrom annotationProcessor
+    }
+}
+
 repositories {
     mavenCentral()
 }
@@ -32,6 +40,9 @@ dependencies {
     implementation "org.flywaydb:flyway-database-postgresql"
     runtimeOnly 'org.postgresql:postgresql' //애플리케이션이 PostgreSQL 데이터베이스에 연결할 수 있게 해주는 JDBC 드라이버
     runtimeOnly 'org.springframework:spring-jdbc' //JDBC API와 스프링의 통합을 제공, 스프링 프레임워크의 일부이며 Spring Data JDBC와 혼동하면 안됨
+
+    //프로젝트를 빌드할 때 새로운 속성에 대한 메타데이터가 자동으로 생성되고 META-INF/spring-configuration-metadata.json에 저장하여 IDE가 자동완성과 같은 기능을 지원하도록 함
+    implementation 'org.springframework.boot:spring-boot-configuration-processor'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
