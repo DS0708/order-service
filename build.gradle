@@ -73,6 +73,10 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     //스프링 클라이언트가 서버와의 연결이 실패할때 retry하기 위한 Spring Retry 의존성 추가
     implementation 'org.springframework.retry:spring-retry'
+
+    //Spring Cloud Stream
+    implementation 'org.springframework.cloud:spring-cloud-stream-binder-rabbit'
+    testImplementation 'org.springframework.cloud:spring-cloud-stream-test-binder'
 }
 
 bootBuildImage {

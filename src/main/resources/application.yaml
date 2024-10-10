@@ -35,6 +35,26 @@ spring:
         initial-interval: 1000 # 첫 재시도 간격(ms)
         max-interval: 2000 # 재시도 간격의 최대 값(ms)
         multiplier: 1.1 # 재시도 간격 증가 배율
+    function:
+      definition: dispatchOrder #Spring Cloud Function에 의해 관리될 함수 정의
+    stream:
+      bindings:
+        dispatchOrder-in-0: #입력 바인딩
+          destination: order-dispatched #RabbitMQ의 익스체인지 실제 이름
+          group: {spring.application.name}
+        acceptOrder-out-0: #StreamBridge에 의해 생성되고 관리되는 출력 바인딩
+          destination: order-accepted
+      rabbit:
+        bindings:
+          acceptOrder-out-0:
+            producer:
+              transacted: true #acceptOrder-out-0 바인딩에 대한 트랜잭션 지원 활성화
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: user
+    password: password
+    connection-timeout: 5s
 
 polar:
   catalog-service-uri: "http://localhost:9001"
