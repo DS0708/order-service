@@ -1,11 +1,16 @@
 package com.polarbookshop.orderservice;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.polarbookshop.orderservice.book.Book;
 import com.polarbookshop.orderservice.book.BookClient;
 import com.polarbookshop.orderservice.order.domain.Order;
 import com.polarbookshop.orderservice.order.domain.OrderStatus;
+import com.polarbookshop.orderservice.order.event.OrderAcceptedMessage;
 import com.polarbookshop.orderservice.order.web.OrderRequest;
 import org.junit.jupiter.api.Test;
+import org.springframework.cloud.stream.binder.test.OutputDestination;
+import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.context.annotation.Import;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -19,10 +24,13 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import java.io.IOException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(TestChannelBinderConfiguration.class)
 @Testcontainers
 class OrderServiceApplicationTests {
 
@@ -34,6 +42,12 @@ class OrderServiceApplicationTests {
 
     @MockBean
     private BookClient bookClient;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private OutputDestination output;
 
     @DynamicPropertySource
     static void postgresqlProperties(DynamicPropertyRegistry registry) {
@@ -50,7 +64,7 @@ class OrderServiceApplicationTests {
 
     //order을 데이터베이스에 넣고 맞는지 확인
     @Test
-    void whenGetOrdersThenReturn() {
+    void whenGetOrdersThenReturn() throws IOException {
         String bookIsbn = "1234567893";
         Book book = new Book(bookIsbn, "Title", "Author", 9.90);
 
@@ -66,6 +80,9 @@ class OrderServiceApplicationTests {
                 .expectBody(Order.class).returnResult().getResponseBody();
         assertThat(expectedOrder).isNotNull();
         assertThat(expectedOrder.status()).isEqualTo(OrderStatus.ACCEPTED);
+        //메시지 브로커에 대하여 test-binder를 사용하여 통합테스트에 추가
+        assertThat(objectMapper.readValue(output.receive().getPayload(), OrderAcceptedMessage.class))
+                .isEqualTo(new OrderAcceptedMessage(expectedOrder.id()));
 
         //위에 DB에 삽입한 order가 정상적으로 있는지 확인
         webTestClient.get().uri("/orders")
