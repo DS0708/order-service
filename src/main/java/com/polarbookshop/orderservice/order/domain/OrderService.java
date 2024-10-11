@@ -30,6 +30,7 @@ public class OrderService {
         return orderRepository.findAll();
     }
 
+    //'order-accepted' 라는 채널에 메시지 큐잉
     @Transactional //매서드를 로컬 트랜잭션으로 실행
     public Mono<Order> submitOrder(String isbn, int quantity){
         return bookClient.getBookByIsbn(isbn)
@@ -42,24 +43,17 @@ public class OrderService {
     }
     private void publishOrderAcceptedEvent(Order order){
         if(!order.status().equals(OrderStatus.ACCEPTED)){
-            return; //주문의 상태가 이미 ACCEPTED이면 아무것도 하지 않음.
+            return; //주문의 상태가 ACCEPTED가 아니면(REJECTED or DISPATCHED라면), 아무것도 하지 않음.
         }
         var orderAcceptedMessage = new OrderAcceptedMessage(order.id());
         log.info("Sending order accepted event with id: {}", order.id());
-        //메시지를 acceptOrder-out-0 바인딩에 명시적으로 보낸다.
+        //메시지를 acceptOrder-out-0 바인딩에 명시적으로 보낸다. 실제 RabbitMQ에는 order-accepted라는 이름의 채널로 보내는 것
         var result = streamBridge.send("acceptOrder-out-0", orderAcceptedMessage);
         log.info("Result of sending data for order with id {}; {}", order.id(), result);
     }
-
-    public static Order buildAcceptedOrder(Book book, int quantity){
-        return Order.of(book.isbn(), book.title() + " - " + book.author(), book.price(), quantity, OrderStatus.ACCEPTED);
-    }
-    public static Order buildRejectedOrder(String bookIsbn, int quantity){
-        return Order.of(bookIsbn, null, null, quantity, OrderStatus.REJECTED);
-    }
-
+    //'order-dispatched'라는 채널을 구독하여 생기는 메시지에 대한 소비
     public Flux<Order> consumeOrderDispatchedEvent(
-        Flux<OrderDispatchedMessage> flux //OrderDispatchedMessage의 리액티브 스트림을 입력으로 받는다.
+            Flux<OrderDispatchedMessage> flux //OrderDispatchedMessage의 리액티브 스트림을 입력으로 받는다.
     ){
         return flux
                 .flatMap(message -> orderRepository.findById(message.orderId()))
@@ -78,5 +72,12 @@ public class OrderService {
                 existingOrder.lastModifiedDate(),
                 existingOrder.version()
         );
+    }
+
+    public static Order buildAcceptedOrder(Book book, int quantity){
+        return Order.of(book.isbn(), book.title() + " - " + book.author(), book.price(), quantity, OrderStatus.ACCEPTED);
+    }
+    public static Order buildRejectedOrder(String bookIsbn, int quantity){
+        return Order.of(bookIsbn, null, null, quantity, OrderStatus.REJECTED);
     }
 }
